@@ -148,6 +148,36 @@
             background-color: #ff6347;
         }
 
+        .daily-counter {
+            margin-top: 40px;
+            padding: 20px;
+            background-color: rgba(255, 99, 71, 0.1);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 99, 71, 0.3);
+        }
+
+        .daily-counter-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #aaa;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .daily-counter-value {
+            font-size: 48px;
+            font-weight: 600;
+            color: #ff6347;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .daily-counter-text {
+            font-size: 16px;
+            color: #ccc;
+            margin-top: 4px;
+        }
+
         .controls {
             display: flex;
             gap: 16px;
@@ -248,6 +278,12 @@
             <button class="btn" id="resetBtn">Reset</button>
             <button class="btn" id="skipBtn">Skip</button>
         </div>
+
+        <div class="daily-counter">
+            <div class="daily-counter-label">Today's Pomodoros</div>
+            <div class="daily-counter-value" id="dailyCounterValue">0</div>
+            <div class="daily-counter-text">completed</div>
+        </div>
     </div>
 
     <script>
@@ -269,7 +305,8 @@
         let timeRemaining = WORK_TIME;
         let isRunning = false;
         let intervalId = null;
-        let sessionCount = 0; // Track number of work sessions
+        let sessionCount = 0; // Track number of work sessions (for 4-session cycle)
+        let dailyPomodoroCount = 0; // Track total completed pomodoros today
 
         // Progress ring elements
         const circle = document.getElementById('progressCircle');
@@ -283,10 +320,70 @@
         const timerDisplay = document.getElementById('timerDisplay');
         const sessionTypeDisplay = document.getElementById('sessionType');
         const pomodoroCounter = document.getElementById('pomodoroCounter');
+        const dailyCounterValue = document.getElementById('dailyCounterValue');
 
         // Set up the circle
         circle.style.strokeDasharray = `${circumference} ${circumference}`;
         circle.style.strokeDashoffset = '0';
+
+        // Function to get today's date as a string (YYYY-MM-DD)
+        function getTodayDate() {
+            const today = new Date();
+            return today.toISOString().split('T')[0];
+        }
+
+        // Function to load daily pomodoro count from localStorage
+        function loadDailyPomodoroCount() {
+            try {
+                const storedData = localStorage.getItem('pomodoroDaily');
+                if (storedData) {
+                    const data = JSON.parse(storedData);
+                    const today = getTodayDate();
+
+                    // If the stored date matches today, use the count
+                    if (data.date === today) {
+                        dailyPomodoroCount = data.count || 0;
+                    } else {
+                        // New day, reset the counter
+                        dailyPomodoroCount = 0;
+                        saveDailyPomodoroCount();
+                    }
+                } else {
+                    // No stored data, initialize
+                    dailyPomodoroCount = 0;
+                    saveDailyPomodoroCount();
+                }
+            } catch (error) {
+                console.error('Error loading daily pomodoro count:', error);
+                dailyPomodoroCount = 0;
+            }
+            updateDailyCounterDisplay();
+        }
+
+        // Function to save daily pomodoro count to localStorage
+        function saveDailyPomodoroCount() {
+            try {
+                const data = {
+                    date: getTodayDate(),
+                    count: dailyPomodoroCount
+                };
+                localStorage.setItem('pomodoroDaily', JSON.stringify(data));
+            } catch (error) {
+                console.error('Error saving daily pomodoro count:', error);
+            }
+        }
+
+        // Function to increment daily pomodoro count
+        function incrementDailyPomodoroCount() {
+            dailyPomodoroCount++;
+            saveDailyPomodoroCount();
+            updateDailyCounterDisplay();
+        }
+
+        // Function to update daily counter display
+        function updateDailyCounterDisplay() {
+            dailyCounterValue.textContent = dailyPomodoroCount;
+        }
 
         // Function to update progress ring
         function setProgress(percent) {
@@ -397,6 +494,8 @@
         function getNextSessionType() {
             if (currentSessionType === SESSION_TYPES.WORK) {
                 sessionCount++;
+                // Increment daily pomodoro count when work session completes
+                incrementDailyPomodoroCount();
                 // After 4 work sessions, take a long break
                 if (sessionCount % 4 === 0) {
                     return SESSION_TYPES.LONG_BREAK;
@@ -444,6 +543,7 @@
         skipBtn.addEventListener('click', skipToNextSession);
 
         // Initialize display
+        loadDailyPomodoroCount(); // Load stored count from localStorage
         updateDisplay();
     </script>
 </body>
