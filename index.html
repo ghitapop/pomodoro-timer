@@ -43,7 +43,19 @@
             fill: none;
             stroke-width: 8;
             stroke-linecap: round;
-            transition: stroke-dashoffset 1s linear;
+            transition: stroke-dashoffset 1s linear, stroke 0.3s ease;
+        }
+
+        .progress-ring__circle.work {
+            stroke: #ff6347;
+        }
+
+        .progress-ring__circle.short-break {
+            stroke: #4ecdc4;
+        }
+
+        .progress-ring__circle.long-break {
+            stroke: #95e1d3;
         }
 
         .progress-ring__background {
@@ -91,6 +103,49 @@
             font-weight: 400;
             margin-bottom: 20px;
             color: #ff6347;
+        }
+
+        .session-info {
+            margin-bottom: 20px;
+        }
+
+        .session-type {
+            font-size: 24px;
+            font-weight: 500;
+            margin-bottom: 12px;
+            transition: color 0.3s ease;
+        }
+
+        .session-type.work {
+            color: #ff6347;
+        }
+
+        .session-type.short-break {
+            color: #4ecdc4;
+        }
+
+        .session-type.long-break {
+            color: #95e1d3;
+        }
+
+        .pomodoro-counter {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .pomodoro-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #2a2a3e;
+            border: 2px solid #ff6347;
+            transition: background-color 0.3s ease;
+        }
+
+        .pomodoro-dot.completed {
+            background-color: #ff6347;
         }
 
         .controls {
@@ -151,6 +206,16 @@
 <body>
     <div class="container">
         <h1>Pomodoro Timer</h1>
+
+        <div class="session-info">
+            <div class="session-type work" id="sessionType">Work</div>
+            <div class="pomodoro-counter" id="pomodoroCounter">
+                <div class="pomodoro-dot"></div>
+                <div class="pomodoro-dot"></div>
+                <div class="pomodoro-dot"></div>
+                <div class="pomodoro-dot"></div>
+            </div>
+        </div>
 
         <div class="timer-wrapper">
             <svg class="progress-ring" width="320" height="320">
@@ -216,6 +281,8 @@
         const resetBtn = document.getElementById('resetBtn');
         const skipBtn = document.getElementById('skipBtn');
         const timerDisplay = document.getElementById('timerDisplay');
+        const sessionTypeDisplay = document.getElementById('sessionType');
+        const pomodoroCounter = document.getElementById('pomodoroCounter');
 
         // Set up the circle
         circle.style.strokeDasharray = `${circumference} ${circumference}`;
@@ -234,11 +301,52 @@
             return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
         }
 
+        // Function to update session type display
+        function updateSessionTypeDisplay() {
+            let sessionText = '';
+            let sessionClass = '';
+
+            switch (currentSessionType) {
+                case SESSION_TYPES.WORK:
+                    sessionText = 'Work';
+                    sessionClass = 'work';
+                    break;
+                case SESSION_TYPES.SHORT_BREAK:
+                    sessionText = 'Short Break';
+                    sessionClass = 'short-break';
+                    break;
+                case SESSION_TYPES.LONG_BREAK:
+                    sessionText = 'Long Break';
+                    sessionClass = 'long-break';
+                    break;
+            }
+
+            sessionTypeDisplay.textContent = sessionText;
+            sessionTypeDisplay.className = `session-type ${sessionClass}`;
+            circle.className = `progress-ring__circle ${sessionClass}`;
+        }
+
+        // Function to update pomodoro counter
+        function updatePomodoroCounter() {
+            const dots = pomodoroCounter.querySelectorAll('.pomodoro-dot');
+            const completedCount = sessionCount % 4;
+
+            dots.forEach((dot, index) => {
+                if (index < completedCount) {
+                    dot.classList.add('completed');
+                } else {
+                    dot.classList.remove('completed');
+                }
+            });
+        }
+
         // Function to update display
         function updateDisplay() {
             timerDisplay.textContent = formatTime(timeRemaining);
             const progressPercent = (timeRemaining / totalTime) * 100;
             setProgress(progressPercent);
+            updateSessionTypeDisplay();
+            updatePomodoroCounter();
         }
 
         // Function to start timer
@@ -257,6 +365,10 @@
                     pauseTimer();
                     // Auto advance to next session
                     skipToNextSession();
+                    // Auto-start the next session after a brief delay
+                    setTimeout(() => {
+                        startTimer();
+                    }, 1000);
                 }
             }, 1000);
         }
