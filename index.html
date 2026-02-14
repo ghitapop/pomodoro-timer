@@ -92,6 +92,60 @@
             margin-bottom: 20px;
             color: #ff6347;
         }
+
+        .controls {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-top: 40px;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            font-size: 16px;
+            font-weight: 500;
+            border: 2px solid #ff6347;
+            background-color: transparent;
+            color: #ff6347;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+
+        .btn:hover {
+            background-color: #ff6347;
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 99, 71, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary {
+            background-color: #ff6347;
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background-color: #ff4530;
+            border-color: #ff4530;
+        }
+
+        @media (max-width: 600px) {
+            .controls {
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+
+            .btn {
+                min-width: 100px;
+                padding: 12px 20px;
+                font-size: 14px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -123,17 +177,45 @@
 
             <div class="timer-display" id="timerDisplay">25:00</div>
         </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" id="startPauseBtn">Start</button>
+            <button class="btn" id="resetBtn">Reset</button>
+            <button class="btn" id="skipBtn">Skip</button>
+        </div>
     </div>
 
     <script>
-        // Timer state
+        // Timer configuration
         const WORK_TIME = 25 * 60; // 25 minutes in seconds
+        const SHORT_BREAK = 5 * 60; // 5 minutes in seconds
+        const LONG_BREAK = 15 * 60; // 15 minutes in seconds
+
+        // Session types
+        const SESSION_TYPES = {
+            WORK: 'work',
+            SHORT_BREAK: 'short_break',
+            LONG_BREAK: 'long_break'
+        };
+
+        // Timer state
+        let currentSessionType = SESSION_TYPES.WORK;
+        let totalTime = WORK_TIME;
         let timeRemaining = WORK_TIME;
+        let isRunning = false;
+        let intervalId = null;
+        let sessionCount = 0; // Track number of work sessions
 
         // Progress ring elements
         const circle = document.getElementById('progressCircle');
         const radius = circle.r.baseVal.value;
         const circumference = radius * 2 * Math.PI;
+
+        // Button elements
+        const startPauseBtn = document.getElementById('startPauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const skipBtn = document.getElementById('skipBtn');
+        const timerDisplay = document.getElementById('timerDisplay');
 
         // Set up the circle
         circle.style.strokeDasharray = `${circumference} ${circumference}`;
@@ -152,9 +234,105 @@
             return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
         }
 
+        // Function to update display
+        function updateDisplay() {
+            timerDisplay.textContent = formatTime(timeRemaining);
+            const progressPercent = (timeRemaining / totalTime) * 100;
+            setProgress(progressPercent);
+        }
+
+        // Function to start timer
+        function startTimer() {
+            if (isRunning) return;
+
+            isRunning = true;
+            startPauseBtn.textContent = 'Pause';
+
+            intervalId = setInterval(() => {
+                if (timeRemaining > 0) {
+                    timeRemaining--;
+                    updateDisplay();
+                } else {
+                    // Timer finished
+                    pauseTimer();
+                    // Auto advance to next session
+                    skipToNextSession();
+                }
+            }, 1000);
+        }
+
+        // Function to pause timer
+        function pauseTimer() {
+            if (!isRunning) return;
+
+            isRunning = false;
+            startPauseBtn.textContent = 'Start';
+
+            if (intervalId) {
+                clearInterval(intervalId);
+                intervalId = null;
+            }
+        }
+
+        // Function to reset timer
+        function resetTimer() {
+            pauseTimer();
+            timeRemaining = totalTime;
+            updateDisplay();
+        }
+
+        // Function to determine next session type
+        function getNextSessionType() {
+            if (currentSessionType === SESSION_TYPES.WORK) {
+                sessionCount++;
+                // After 4 work sessions, take a long break
+                if (sessionCount % 4 === 0) {
+                    return SESSION_TYPES.LONG_BREAK;
+                } else {
+                    return SESSION_TYPES.SHORT_BREAK;
+                }
+            } else {
+                // After any break, return to work
+                return SESSION_TYPES.WORK;
+            }
+        }
+
+        // Function to skip to next session
+        function skipToNextSession() {
+            pauseTimer();
+            currentSessionType = getNextSessionType();
+
+            // Set time based on session type
+            switch (currentSessionType) {
+                case SESSION_TYPES.WORK:
+                    totalTime = WORK_TIME;
+                    break;
+                case SESSION_TYPES.SHORT_BREAK:
+                    totalTime = SHORT_BREAK;
+                    break;
+                case SESSION_TYPES.LONG_BREAK:
+                    totalTime = LONG_BREAK;
+                    break;
+            }
+
+            timeRemaining = totalTime;
+            updateDisplay();
+        }
+
+        // Event listeners
+        startPauseBtn.addEventListener('click', () => {
+            if (isRunning) {
+                pauseTimer();
+            } else {
+                startTimer();
+            }
+        });
+
+        resetBtn.addEventListener('click', resetTimer);
+        skipBtn.addEventListener('click', skipToNextSession);
+
         // Initialize display
-        document.getElementById('timerDisplay').textContent = formatTime(timeRemaining);
-        setProgress(100); // Full progress ring initially
+        updateDisplay();
     </script>
 </body>
 </html>
