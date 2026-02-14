@@ -1,6 +1,7 @@
 {
   "initialized": true,
   "created_at": "2026-02-14T21:48:38.862Z",
+  "completed_at": "2026-02-14T22:25:00.000Z",
   "team_key": "NEX",
   "team_name": "Nextgenflows",
   "project_id": "e585eb73-b582-4494-a53e-cf310fa9727d",
@@ -9,40 +10,41 @@
   "meta_issue_id": "NEX-160",
   "meta_issue_uuid": "49943e71-1df5-4f63-9479-9e8f475484da",
   "total_issues": 5,
+  "status": "COMPLETE",
   "issues": [
     {
       "id": "NEX-155",
       "uuid": "22dda0ee-2a0f-46bb-a9f9-535db5c2de2d",
       "title": "Timer Display - Countdown UI",
-      "status": "Backlog",
+      "status": "Done",
       "priority": "High"
     },
     {
       "id": "NEX-156",
       "uuid": "d84d119d-6f62-451a-8d99-b01765d67106",
       "title": "Timer Controls - Start/Pause/Reset/Skip",
-      "status": "Backlog",
+      "status": "Done",
       "priority": "High"
     },
     {
       "id": "NEX-157",
       "uuid": "24d34fa4-8e12-476c-a9b0-9c2c491fbcee",
       "title": "Session Types - Work, Breaks, Auto-switch",
-      "status": "Backlog",
+      "status": "Done",
       "priority": "High"
     },
     {
       "id": "NEX-158",
       "uuid": "13341623-c1c0-4b08-a1dd-0b130928592b",
       "title": "Session Counter - Track Completed Pomodoros",
-      "status": "Backlog",
+      "status": "Done",
       "priority": "Medium"
     },
     {
       "id": "NEX-159",
       "uuid": "60df7691-a947-4d63-a476-bf7e5cd6ffaa",
       "title": "Audio Notification - Timer Completion Alert",
-      "status": "Backlog",
+      "status": "Done",
       "priority": "Medium"
     }
   ]
