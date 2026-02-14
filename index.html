@@ -307,6 +307,7 @@
         let intervalId = null;
         let sessionCount = 0; // Track number of work sessions (for 4-session cycle)
         let dailyPomodoroCount = 0; // Track total completed pomodoros today
+        let audioContext = null; // Audio context for notification sounds
 
         // Progress ring elements
         const circle = document.getElementById('progressCircle');
@@ -325,6 +326,59 @@
         // Set up the circle
         circle.style.strokeDasharray = `${circumference} ${circumference}`;
         circle.style.strokeDashoffset = '0';
+
+        // Function to initialize audio context (must be called on user interaction)
+        function initAudioContext() {
+            if (!audioContext) {
+                try {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (error) {
+                    console.warn('Web Audio API not supported:', error);
+                }
+            }
+        }
+
+        // Function to play notification sound
+        function playNotificationSound() {
+            // Initialize audio context if needed
+            if (!audioContext) {
+                initAudioContext();
+            }
+
+            // If still no audio context, exit gracefully
+            if (!audioContext) {
+                console.warn('Audio context not available');
+                return;
+            }
+
+            try {
+                // Resume audio context if it's suspended (browser autoplay policy)
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+
+                // Create oscillator for a gentle bell-like sound
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                // Set frequency to a pleasant tone (800 Hz - gentle bell sound)
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+
+                // Set volume and create a fade out effect
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+
+                // Play the sound for 0.5 seconds
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.5);
+            } catch (error) {
+                console.warn('Error playing notification sound:', error);
+            }
+        }
 
         // Function to get today's date as a string (YYYY-MM-DD)
         function getTodayDate() {
@@ -450,6 +504,9 @@
         function startTimer() {
             if (isRunning) return;
 
+            // Initialize audio context on first user interaction
+            initAudioContext();
+
             isRunning = true;
             startPauseBtn.textContent = 'Pause';
 
@@ -458,7 +515,8 @@
                     timeRemaining--;
                     updateDisplay();
                 } else {
-                    // Timer finished
+                    // Timer finished - play notification sound
+                    playNotificationSound();
                     pauseTimer();
                     // Auto advance to next session
                     skipToNextSession();
